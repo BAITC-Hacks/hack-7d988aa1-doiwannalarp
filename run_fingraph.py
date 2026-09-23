@@ -124,7 +124,7 @@ def dataset(data_dir: Path, out_dir: Path) -> dict:
                  "methodology_version": hashlib.sha256(methodology.read_bytes()).hexdigest()[:10] if methodology.exists() else None},
         "nodes": records(nodes), "edges": records(edges), "transactions": records(tx),
         "clusters": records(clusters), "exports": available,
-        "methodology": {"text": methodology.read_text() if methodology.exists() else None,
+        "methodology": {"text": methodology.read_text(encoding="utf-8") if methodology.exists() else None,
                         "thresholds": {k: v for k, v in vars(thresholds).items() if k.isupper()}},
     }
 

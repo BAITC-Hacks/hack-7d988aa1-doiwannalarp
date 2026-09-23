@@ -1,21 +1,21 @@
 {
   "timings_seconds": {
-    "load_raw": 0.0399,
-    "check_data": 0.0337,
-    "build_graph": 0.0167,
-    "compute_features": 27.1204,
-    "add_temporal": 5.804,
-    "assign_roles": 0.4497,
-    "detect_clusters": 0.3223,
-    "score_priority": 0.6244,
-    "summarize_clusters": 0.3748,
-    "build_top_nodes": 0.0088,
-    "write_outputs": 0.0901,
-    "write_graph_edges": 0.022,
-    "extra_resilience": 0.1687,
-    "extra_completeness": 0.04,
-    "extra_routes": 0.127,
-    "extra_sensitivity": 28.7408
+    "load_raw": 0.0616,
+    "check_data": 0.019,
+    "build_graph": 0.0074,
+    "compute_features": 8.433,
+    "add_temporal": 1.0876,
+    "assign_roles": 0.0789,
+    "detect_clusters": 0.0632,
+    "score_priority": 0.0717,
+    "summarize_clusters": 0.0442,
+    "build_top_nodes": 0.0009,
+    "write_outputs": 0.0474,
+    "write_graph_edges": 0.0045,
+    "extra_resilience": 0.0631,
+    "extra_completeness": 0.0067,
+    "extra_routes": 0.0352,
+    "extra_sensitivity": 3.8995
   },
   "counts": {
     "nodes": 2248,
@@ -63,11 +63,12 @@
     "sensitivity": "ok"
   },
   "output_paths": {
-    "nodes_roles": "outputs\\nodes_roles.csv",
-    "clusters": "outputs\\clusters.csv",
-    "top_nodes": "outputs\\top_nodes.csv",
-    "node_features": "outputs\\node_features.parquet",
-    "graph_edges": "outputs\\graph_edges.parquet"
+    "nodes_roles": "outputs/nodes_roles.csv",
+    "clusters": "outputs/clusters.csv",
+    "top_nodes": "outputs/top_nodes.csv",
+    "node_features": "outputs/node_features.parquet",
+    "graph_edges": "outputs/graph_edges.parquet",
+    "sensitivity": "outputs/sensitivity.csv"
   },
   "seed": 42
 }

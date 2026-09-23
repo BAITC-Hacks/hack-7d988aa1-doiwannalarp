@@ -2,9 +2,12 @@ import json
 import math
 
 import pandas as pd
+import networkx as nx
+import pytest
 
 from fixtures import make_fixture_graph
-from moneygraph.evidence import BANNED
+from moneygraph.clustering import summarize_clusters
+from moneygraph.evidence import BANNED, build_evidence
 from moneygraph.features import compute_features
 from moneygraph.graph import build_graph
 from moneygraph.roles import assign_roles
@@ -79,3 +82,44 @@ def test_depth_four_hub_can_consolidate():
     roles = assign_roles(hub, graph).set_index("gid")
     assert roles.loc[6, "role"] == "consolidator"
     assert roles.loc[6, "role"] != "terminal"
+
+
+@pytest.mark.parametrize("is_seed, ratio", [(True, float("nan")), (True, 0.0),
+                                            (False, float("nan")), (False, None)])
+def test_unknown_forwarding_is_not_reported_as_zero(is_seed, ratio):
+    row = dict(role="consolidator", is_seed=is_seed, in_deg=6, out_deg=2,
+               in_sum=100_000, out_sum=200_000, pass_ratio=ratio,
+               seed_payers=1, max_payers_3d=3, inflow_incomplete=True)
+    evidence = build_evidence(row)
+    assert "доля пересылки не определена" in evidence
+    assert "дальше ушло 0%" not in evidence
+    assert len(evidence) <= 200
+    censored = build_evidence({**row, "censored": True})
+    assert "исходящие не наблюдаются (граница выгрузки)" in censored
+
+
+def test_observed_zero_forwarding_is_reported_as_zero():
+    evidence = build_evidence(dict(role="consolidator", is_seed=False,
+                                   in_deg=6, out_deg=0, in_sum=100_000,
+                                   out_sum=0, pass_ratio=0.0))
+    assert "дальше ушло 0%" in evidence
+
+
+@pytest.mark.parametrize("role", ["coordinator", "consolidator", "distributor"])
+def test_cluster_hypothesis_names_role_representative(role):
+    graph = nx.DiGraph()
+    graph.add_nodes_from(range(1, 7))
+    graph.add_edges_from([(2, 1), (2, 6), (3, 4), (3, 5), (3, 6)], sum_kzt=10_000)
+    graph.graph["undirected_weighted"] = nx.Graph(graph.edges())
+    frame = pd.DataFrame({
+        "gid": [1, 2, 3, 4, 5], "cluster_id": [1] * 5,
+        "role": ["terminal", role, role, "peripheral", "peripheral"],
+        "priority_score": [0.9, 0.5, 0.5, 0.1, 0.1],
+        "is_seed": [False, False, False, True, True],
+    })
+    summary = summarize_clusters(frame, graph).iloc[0]
+    assert "gid 2" in summary.hypothesis
+    assert summary.top_gids == "1;2;3;4;5"
+    if role == "distributor":
+        # Count only the named distributor, including recipients outside its cluster.
+        assert "на 2 получателей" in summary.hypothesis

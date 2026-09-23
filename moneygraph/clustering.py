@@ -40,13 +40,15 @@ def summarize_clusters(enriched_df, G) -> pd.DataFrame:
         if len(group) == 1 and G.graph["undirected_weighted"].degree(top_gid) == 0:
             hypothesis = "Изолированный узел: нет наблюдаемых переводов >=5 000 KZT"
         elif "coordinator" in roles:
-            hypothesis = f"Гипотеза: контур сбора — средства {n_seed} seed сходятся к gid {top_gid}"
+            role_gid = int(ordered.loc[ordered.role == "coordinator"].iloc[0].gid)
+            hypothesis = f"Гипотеза: контур сбора — средства {n_seed} seed сходятся к gid {role_gid}"
         elif "consolidator" in roles and n_seed >= 2:
-            hypothesis = f"Гипотеза: сбор средств {n_seed} seed через gid {top_gid}"
+            role_gid = int(ordered.loc[ordered.role == "consolidator"].iloc[0].gid)
+            hypothesis = f"Гипотеза: сбор средств {n_seed} seed через gid {role_gid}"
         elif "distributor" in roles:
-            distributors = set(group.loc[group.role == "distributor", "gid"])
-            k = len({v for u, v in G.edges() if u in distributors and v in members})
-            hypothesis = f"Гипотеза: веерное распределение от gid {top_gid} на {k} получателей"
+            role_gid = int(ordered.loc[ordered.role == "distributor"].iloc[0].gid)
+            k = G.out_degree(role_gid)
+            hypothesis = f"Гипотеза: веерное распределение от gid {role_gid} на {k} получателей"
         elif (group.role == "transit").mean() >= 0.3:
             hypothesis = "Гипотеза: транзитная цепочка без удержания средств"
         elif (group.role == "boundary").mean() >= 0.5:

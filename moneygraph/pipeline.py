@@ -71,8 +71,8 @@ def run(data_dir=None, out_dir=None, seed: int = config.SEED) -> dict:
     try:
         t0 = time.perf_counter()
         from moneygraph.extras import sensitivity
-        df = sensitivity.run(features_df, G)
-        df.to_csv(out_dir / "sensitivity.csv", index=False, encoding="utf-8")
+        sensitivity.run(features_df, G, out_dir=out_dir)
+        paths["sensitivity"] = str(out_dir / "sensitivity.csv")
         timings["extra_sensitivity"] = round(time.perf_counter() - t0, 4)
         extras_status["sensitivity"] = "ok"
     except Exception as exc:  # noqa: BLE001 - extras must never break the pipeline

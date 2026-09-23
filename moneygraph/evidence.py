@@ -38,12 +38,27 @@ def build_evidence(row, thresholds=None) -> str:
     seed_payers = int(_number(_get(row, "seed_payers")))
     in_sum = _kzt(_get(row, "in_sum"))
     out_sum = _kzt(_get(row, "out_sum"))
-    ratio = _number(_get(row, "pass_ratio"))
-    pass_pct = round(100 * ratio)
+    is_seed = bool(_get(row, "is_seed", False))
+    # Seed inflow is incomplete: never interpret its undefined ratio as zero.
+    ratio = None
+    if not is_seed:
+        try:
+            value = float(row.get("pass_ratio"))
+            if math.isfinite(value):
+                ratio = value
+        except (TypeError, ValueError):
+            pass
+    pass_pct = round(100 * ratio) if ratio is not None else None
     fast_pct = round(100 * _number(_get(row, "fast_through_share")))
     censored = bool(_get(row, "censored", False))
+    if censored:
+        forwarding = "исходящие не наблюдаются (граница выгрузки)"
+    elif pass_pct is None:
+        forwarding = "доля пересылки не определена"
+    else:
+        forwarding = f"дальше ушло {pass_pct}%"
 
-    isolated_seed = bool(_get(row, "is_seed", False)) and in_deg == out_deg == 0
+    isolated_seed = is_seed and in_deg == out_deg == 0
     if isolated_seed:
         result = "Seed без наблюдаемых переводов >=5 000 KZT в июле."
     elif role == "coordinator":
@@ -51,14 +66,15 @@ def build_evidence(row, thresholds=None) -> str:
                   f"через {int(_number(_get(row, 'feeder_branches')))} ветки; получено {in_sum}.")
     elif role == "consolidator":
         result = (f"Признаки консолидации: {in_deg} плательщиков ({seed_payers} seed), получено {in_sum}; "
-                  f"дальше ушло {pass_pct}%; до {int(_number(_get(row, 'max_payers_3d')))} платеж. за 3 дня.")
+                  f"{forwarding}; до {int(_number(_get(row, 'max_payers_3d')))} платеж. за 3 дня.")
     elif role == "distributor":
         result = f"Признаки веерного распределения: {out_deg} получателей, отправлено {out_sum}."
     elif role == "transit":
-        result = f"Признаки транзита: пропущено {pass_pct}% полученного ({in_sum}); {fast_pct}% ушло в течение 2 дней."
+        passed = f"пропущено {pass_pct}% полученного" if pass_pct is not None else forwarding
+        result = f"Признаки транзита: {passed} ({in_sum}); {fast_pct}% ушло в течение 2 дней."
     elif role == "terminal":
         result = ("Кандидат в конечные получатели (в наблюдаемом окне): "
-                  f"получено {in_sum} от {in_deg} плательщиков, дальше ушло {pass_pct}%.")
+                  f"получено {in_sum} от {in_deg} плательщиков, {forwarding}.")
     elif role == "boundary":
         result = ("Граница выгрузки (4-е колено): исходящие не выгружались, роль не определима; "
                   f"получено {in_sum} от {in_deg}.")
@@ -66,8 +82,6 @@ def build_evidence(row, thresholds=None) -> str:
         turnover = _kzt(_number(_get(row, "in_sum")) + _number(_get(row, "out_sum")))
         result = f"Выраженных признаков роли нет: {in_deg} вх. / {out_deg} исх., оборот {turnover}."
 
-    if censored:
-        result = result.replace(f"дальше ушло {pass_pct}%", "исходящие не наблюдаются (граница выгрузки)")
     if bool(_get(row, "inflow_incomplete", False)) and not isolated_seed:
         suffix = "; есть входящие вне выборки"
         if len(result) + len(suffix) <= EVIDENCE_MAX:

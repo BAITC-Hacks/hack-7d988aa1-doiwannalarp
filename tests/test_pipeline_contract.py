@@ -4,7 +4,8 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from moneygraph import pipeline
+from moneygraph import pipeline, quality
+from moneygraph.io import load_raw
 from moneygraph.schemas import ENRICHED_COLUMNS
 
 
@@ -55,7 +56,8 @@ def synthetic_data(tmp_path):
     return data_dir
 
 
-def test_pipeline_contract(synthetic_data, tmp_path):
+def test_pipeline_contract(synthetic_data, tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
     out_dir = tmp_path / "out"
     meta = pipeline.run(data_dir=synthetic_data, out_dir=out_dir, seed=42)
 
@@ -76,15 +78,46 @@ def test_pipeline_contract(synthetic_data, tmp_path):
 
     assert meta["counts"]["nodes"] == 10
     assert meta["counts"]["edges"] == len(edges)
+    assert meta["extras_status"]["sensitivity"] == "ok"
+    assert Path(meta["output_paths"]["sensitivity"]) == out_dir / "sensitivity.csv"
+    assert (out_dir / "sensitivity.csv").exists()
+    assert not (tmp_path / "outputs").exists()
 
 
-def test_determinism(synthetic_data, tmp_path):
+def test_determinism(synthetic_data, tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
     out_dir1 = tmp_path / "out1"
     out_dir2 = tmp_path / "out2"
     pipeline.run(data_dir=synthetic_data, out_dir=out_dir1, seed=42)
     pipeline.run(data_dir=synthetic_data, out_dir=out_dir2, seed=42)
 
-    for name in ["nodes_roles.csv", "clusters.csv", "top_nodes.csv"]:
+    for name in ["nodes_roles.csv", "clusters.csv", "top_nodes.csv", "sensitivity.csv"]:
         h1 = hashlib.sha256((out_dir1 / name).read_bytes()).hexdigest()
         h2 = hashlib.sha256((out_dir2 / name).read_bytes()).hexdigest()
         assert h1 == h2, f"{name} not deterministic"
+
+
+def test_data_notes_preserve_legacy_appendix_and_refresh_report(synthetic_data, tmp_path):
+    report = quality.check_data(load_raw(synthetic_data))
+    docs_dir = tmp_path / "docs"
+    path = Path(quality.write_data_notes(report, docs_dir))
+    legacy = path.read_text(encoding="utf-8").replace("<!-- moneygraph:quality:start -->\n", "").replace("\n<!-- moneygraph:quality:end -->", "")
+    appendix = "\nAnalyst note without a heading.\n\n## DEV2 calibration measurements\nKeep these percentiles.\n"
+    path.write_text(legacy.rstrip() + appendix, encoding="utf-8")
+    updated = {**report, "n_nodes": report["n_nodes"] + 1}
+    quality.write_data_notes(updated, docs_dir)
+    first = path.read_text(encoding="utf-8")
+    quality.write_data_notes(updated, docs_dir)
+    assert path.read_text(encoding="utf-8") == first
+    assert first.endswith(appendix)
+    assert f"- nodes: {updated['n_nodes']}," in first
+    assert first.count("<!-- moneygraph:quality:start -->") == 1
+
+
+def test_data_notes_preserve_unrecognized_authored_content(synthetic_data, tmp_path):
+    report = quality.check_data(load_raw(synthetic_data))
+    path = tmp_path / "DATA_NOTES.md"
+    authored = "# Analyst notes\n\nKeep this original content.\n"
+    path.write_text(authored, encoding="utf-8")
+    quality.write_data_notes(report, tmp_path)
+    assert path.read_text(encoding="utf-8").startswith(authored)

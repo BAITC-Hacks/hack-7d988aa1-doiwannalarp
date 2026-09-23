@@ -70,8 +70,9 @@ def build_evidence(row, thresholds=None) -> str:
     elif role == "distributor":
         result = f"Признаки веерного распределения: {out_deg} получателей, отправлено {out_sum}."
     elif role == "transit":
-        passed = f"пропущено {pass_pct}% полученного" if pass_pct is not None else forwarding
-        result = f"Признаки транзита: {passed} ({in_sum}); {fast_pct}% ушло в течение 2 дней."
+        passed = f"исходящий/входящий {pass_pct}%" if pass_pct is not None else forwarding
+        result = (f"Признаки транзита: {passed} (вход {in_sum}); "
+                  f"{fast_pct}% исходящих — в дни поступлений или следующие 2 дня; суммы не сопоставлены.")
     elif role == "terminal":
         result = ("Кандидат в конечные получатели (в наблюдаемом окне): "
                   f"получено {in_sum} от {in_deg} плательщиков, {forwarding}.")

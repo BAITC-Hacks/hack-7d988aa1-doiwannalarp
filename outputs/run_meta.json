@@ -1,21 +1,21 @@
 {
   "timings_seconds": {
-    "load_raw": 0.0616,
-    "check_data": 0.019,
-    "build_graph": 0.0074,
-    "compute_features": 8.433,
-    "add_temporal": 1.0876,
-    "assign_roles": 0.0789,
-    "detect_clusters": 0.0632,
-    "score_priority": 0.0717,
-    "summarize_clusters": 0.0442,
-    "build_top_nodes": 0.0009,
-    "write_outputs": 0.0474,
-    "write_graph_edges": 0.0045,
-    "extra_resilience": 0.0631,
-    "extra_completeness": 0.0067,
-    "extra_routes": 0.0352,
-    "extra_sensitivity": 3.8995
+    "load_raw": 0.0294,
+    "check_data": 0.0216,
+    "build_graph": 0.0106,
+    "compute_features": 10.2311,
+    "add_temporal": 1.3189,
+    "assign_roles": 0.1114,
+    "detect_clusters": 0.0739,
+    "score_priority": 0.14,
+    "summarize_clusters": 0.1138,
+    "build_top_nodes": 0.003,
+    "write_outputs": 0.0262,
+    "write_graph_edges": 0.0075,
+    "extra_resilience": 0.0506,
+    "extra_completeness": 0.0201,
+    "extra_routes": 0.0653,
+    "extra_sensitivity": 6.7103
   },
   "counts": {
     "nodes": 2248,
@@ -63,12 +63,12 @@
     "sensitivity": "ok"
   },
   "output_paths": {
-    "nodes_roles": "outputs/nodes_roles.csv",
-    "clusters": "outputs/clusters.csv",
-    "top_nodes": "outputs/top_nodes.csv",
-    "node_features": "outputs/node_features.parquet",
-    "graph_edges": "outputs/graph_edges.parquet",
-    "sensitivity": "outputs/sensitivity.csv"
+    "nodes_roles": "C:\\Users\\User\\AppData\\Local\\Temp\\moneygraph-dev2-review-20260923\\outputs\\nodes_roles.csv",
+    "clusters": "C:\\Users\\User\\AppData\\Local\\Temp\\moneygraph-dev2-review-20260923\\outputs\\clusters.csv",
+    "top_nodes": "C:\\Users\\User\\AppData\\Local\\Temp\\moneygraph-dev2-review-20260923\\outputs\\top_nodes.csv",
+    "node_features": "C:\\Users\\User\\AppData\\Local\\Temp\\moneygraph-dev2-review-20260923\\outputs\\node_features.parquet",
+    "graph_edges": "C:\\Users\\User\\AppData\\Local\\Temp\\moneygraph-dev2-review-20260923\\outputs\\graph_edges.parquet",
+    "sensitivity": "C:\\Users\\User\\AppData\\Local\\Temp\\moneygraph-dev2-review-20260923\\outputs\\sensitivity.csv"
   },
   "seed": 42
 }

@@ -82,6 +82,7 @@ def records(frame: pd.DataFrame) -> list[dict]:
 
 def dataset(data_dir: Path, out_dir: Path) -> dict:
     from moneygraph import thresholds
+    from moneygraph.priority import ACTIONS
     frames = read_frames(data_dir)
     nodes, edges, tx = (frames[k] for k in SCHEMAS)
     available = [name for name in EXPORTS if (out_dir / name).exists()]
@@ -102,6 +103,8 @@ def dataset(data_dir: Path, out_dir: Path) -> dict:
     for field, group in (("in_tx", "dst"), ("out_tx", "src")):
         if field not in nodes:
             nodes[field] = nodes.gid.map(tx.groupby(group).size()).fillna(0)
+    if "role" in nodes:
+        nodes["recommended_action"] = nodes.role.map(ACTIONS)
     clusters = pd.read_csv(out_dir / "clusters.csv", dtype={"top_gids": str}) if "clusters.csv" in available else pd.DataFrame()
     for field in ("role_score", "priority_score"):
         if field in nodes and not nodes[field].dropna().between(0, 1).all():

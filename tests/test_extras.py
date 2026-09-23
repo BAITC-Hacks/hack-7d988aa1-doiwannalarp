@@ -132,3 +132,32 @@ def test_analysis_displays_all_completeness_requests(monkeypatch):
     assert not app.exception
     assert app.dataframe[0].value.gid.tolist() == [1, 2, 3]
     assert "неполный входящий" in app.dataframe[0].value.iloc[2]["reason"]
+
+
+def test_adapter_reads_utf8_on_windows_and_exposes_full_action(tmp_path, monkeypatch):
+    from pathlib import Path
+    import run_fingraph
+    from moneygraph.priority import ACTIONS
+
+    raw = tmp_path / "data"
+    out = tmp_path / "outputs"
+    docs = tmp_path / "docs"
+    for folder in (raw, out, docs):
+        folder.mkdir()
+    pd.DataFrame({"gid": [1, 2], "depth": [0, 1], "is_seed": [True, False]}).to_parquet(raw / "nodes.parquet")
+    pd.DataFrame({"src": [1], "dst": [2], "sum_kzt": [5000.0], "n_tx": [1], "depth": [1]}).to_parquet(raw / "edges.parquet")
+    pd.DataFrame({"src": [1], "dst": [2], "date": pd.to_datetime(["2026-07-01"]), "sum_kzt": [5000.0]}).to_parquet(raw / "transactions.parquet")
+    pd.DataFrame({"gid": [1, 2], "role": ["peripheral", "consolidator"]}).to_csv(out / "nodes_roles.csv", index=False)
+    methodology = "Источники и правила: проверяемые гипотезы."
+    (docs / "METHODOLOGY.md").write_text(methodology, encoding="utf-8")
+    monkeypatch.setattr(run_fingraph, "ROOT", tmp_path)
+    original = Path.read_text
+
+    def windows_read(path, encoding=None, errors=None):
+        return original(path, encoding=encoding or "cp1252", errors=errors)
+
+    monkeypatch.setattr(Path, "read_text", windows_read)
+    result = run_fingraph.dataset(raw, out)
+    assert result["methodology"]["text"] == methodology
+    assert result["nodes"][1]["recommended_action"] == ACTIONS["consolidator"]
+    assert all(isinstance(node["gid"], str) for node in result["nodes"])

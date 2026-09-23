@@ -4,7 +4,7 @@ export interface Client {
   in_sum:number; out_sum:number; in_deg:number; out_deg:number; in_tx:number; out_tx:number;
   censored?:boolean; inflow_incomplete?:boolean; seed_reach?:number; seed_payers?:number; feeder_branches?:number; convergence_gain?:number; pass_ratio?:number|null;
   betweenness?:number; seed_flow_in?:number; in_cycle?:boolean; in_2cycle?:boolean; late_inflow_share?:number; fast_through_share?:number;
-  x?:number; y?:number; rule_trace?:string; secondary_roles?:string; priority_components?:string;
+  x?:number; y?:number; rule_trace?:string; secondary_roles?:string; priority_components?:string; recommended_action?:string;
 }
 export interface Edge {src:string;dst:string;sum_kzt:number;n_tx:number;depth:number}
 export interface Transaction {src:string;dst:string;date:string;sum_kzt:number}

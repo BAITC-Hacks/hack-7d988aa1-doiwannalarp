@@ -24,7 +24,7 @@ def run(data_dir=None, out_dir=None, seed: int = config.SEED) -> dict:
 
     raw = _stage(timings, "load_raw", io.load_raw, data_dir)
     quality_report = _stage(timings, "check_data", quality.check_data, raw)
-    quality.write_data_notes(quality_report)
+    quality.write_data_notes(quality_report, docs_dir=out_dir / "docs")
 
     G = _stage(timings, "build_graph", graph.build_graph, raw)
     features_df = _stage(timings, "compute_features", compute_features, G, raw)
@@ -55,11 +55,15 @@ def run(data_dir=None, out_dir=None, seed: int = config.SEED) -> dict:
         ("resilience", "moneygraph.extras.resilience"),
         ("completeness", "moneygraph.extras.completeness"),
         ("routes", "moneygraph.extras.routes"),
+        ("sensitivity", "moneygraph.extras.sensitivity"),
     ]:
         try:
             t0 = time.perf_counter()
             module = __import__(fn_path, fromlist=["run"])
-            df = module.run(G, enriched, raw)
+            if name == "sensitivity":
+                df = module.run(features_df, G, out_dir=None)
+            else:
+                df = module.run(G, enriched, raw)
             df.to_csv(out_dir / f"{name}.csv", index=False, encoding="utf-8")
             timings[f"extra_{name}"] = round(time.perf_counter() - t0, 4)
             extras_status[name] = "ok"
@@ -67,18 +71,8 @@ def run(data_dir=None, out_dir=None, seed: int = config.SEED) -> dict:
             print(f"[pipeline] warning: extra '{name}' failed: {exc}")
             traceback.print_exc()
             extras_status[name] = f"failed: {exc}"
-
-    try:
-        t0 = time.perf_counter()
-        from moneygraph.extras import sensitivity
-        sensitivity.run(features_df, G, out_dir=out_dir)
-        paths["sensitivity"] = str(out_dir / "sensitivity.csv")
-        timings["extra_sensitivity"] = round(time.perf_counter() - t0, 4)
-        extras_status["sensitivity"] = "ok"
-    except Exception as exc:  # noqa: BLE001 - extras must never break the pipeline
-        print(f"[pipeline] warning: extra 'sensitivity' failed: {exc}")
-        traceback.print_exc()
-        extras_status["sensitivity"] = f"failed: {exc}"
+        if name == "sensitivity" and extras_status[name] == "ok":
+            paths["sensitivity"] = str(out_dir / "sensitivity.csv")
 
     role_distribution = enriched["role"].value_counts().to_dict()
 

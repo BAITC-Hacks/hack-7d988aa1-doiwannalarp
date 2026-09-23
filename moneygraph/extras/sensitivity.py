@@ -18,7 +18,8 @@ def _ranked(features_df, G, values):
     return roles.set_index("gid").role, top
 
 
-def run(features_df, G, out_dir="outputs") -> pd.DataFrame:
+def run(features_df, G, *, out_dir: str | Path | None = "outputs") -> pd.DataFrame:
+    """Compute sensitivity; pass out_dir=None when the caller owns output writes."""
     names = sorted(name for name in vars(thresholds)
                    if name.isupper() and (name.endswith("_MIN") or name.endswith("_STRONG"))
                    and isinstance(getattr(thresholds, name), (int, float)))
@@ -36,9 +37,10 @@ def run(features_df, G, out_dir="outputs") -> pd.DataFrame:
                             "role_flips": int((roles != baseline_roles).sum()),
                             "top20_jaccard": len(baseline_top & top) / len(union) if union else 1.0})
     result = pd.DataFrame(records, columns=["param", "factor", "role_flips", "top20_jaccard"])
-    out = Path(out_dir) / "sensitivity.csv"
-    out.parent.mkdir(parents=True, exist_ok=True)
-    result.to_csv(out, index=False, encoding="utf-8")
+    if out_dir is not None:
+        out = Path(out_dir) / "sensitivity.csv"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        result.to_csv(out, index=False, encoding="utf-8")
     unstable = sorted(result.loc[result.top20_jaccard < 0.7, "param"].unique())
     print("Sensitivity: top-20 Jaccard < 0.7 for " + (", ".join(unstable) if unstable else "none"))
     return result

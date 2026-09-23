@@ -32,11 +32,42 @@ def ego_gids(edges: pd.DataFrame, active_gid: int, hops: int = 2) -> set[int]:
     return result
 
 
+def _local_layout(nodes: pd.DataFrame, edges: pd.DataFrame) -> pd.DataFrame:
+    """Recompute x,y for a small subgraph in isolation: reusing the global
+    spring_layout positions squishes tightly-connected ego subsets into a
+    corner whenever the subset also reaches a few far-away chain nodes."""
+    ids = set(nodes["gid"].astype(int))
+    graph = nx.Graph()
+    graph.add_nodes_from(ids)
+    for row in edges.itertuples(index=False):
+        if row.src in ids and row.dst in ids:
+            graph.add_edge(row.src, row.dst)
+    positions = nx.spring_layout(graph, seed=42)
+    out = nodes.copy()
+    out["x"] = out["gid"].astype(int).map(lambda g: positions[g][0])
+    out["y"] = out["gid"].astype(int).map(lambda g: positions[g][1])
+    return out
+
+
 def render_graph(nodes: pd.DataFrame, edges: pd.DataFrame, *, color_by="role",
-                 active_gid=None, height="700px") -> str:
+                 active_gid=None, height="700px", show_labels=True, rescale=False) -> str:
     net = Network(directed=True, height=height, width="100%")
     net.toggle_physics(False)
     node_ids = set(nodes["gid"].astype(int))
+
+    span = 700
+    x_min = x_max = y_min = y_max = None
+    if rescale:
+        valid = nodes[["x", "y"]].dropna()
+        if not valid.empty:
+            x_min, x_max = valid["x"].min(), valid["x"].max()
+            y_min, y_max = valid["y"].min(), valid["y"].max()
+
+    def _scaled(value, lo, hi):
+        if lo is None or hi is None or hi == lo:
+            return value * span
+        return (value - lo) / (hi - lo) * span - span / 2
+
     for row in nodes.sort_values("gid").to_dict("records"):
         gid = int(row["gid"])
         score = row.get("priority_score", 0)
@@ -48,21 +79,31 @@ def render_graph(nodes: pd.DataFrame, edges: pd.DataFrame, *, color_by="role",
         base_color = (ROLE_COLORS.get(row.get("role"), "#e0e0e0") if color_by == "role"
                       else _cluster_color(row.get("cluster_id")))
         kwargs = {
-            "label": str(gid), "title": f"gid {gid} · {row.get('role', '')}",
+            "label": str(gid) if show_labels or selected else " ",
+            "title": f"gid {gid} · {row.get('role', '')}",
             "size": size,
             "color": {"background": base_color, "border": "#d32f2f" if selected else base_color},
             "borderWidth": 4 if selected else 1,
         }
         x, y = row.get("x"), row.get("y")
         if pd.notna(x) and pd.notna(y):
-            kwargs.update(x=float(x) * 700, y=float(y) * 700)
+            if rescale:
+                kwargs.update(x=_scaled(float(x), x_min, x_max), y=_scaled(float(y), y_min, y_max))
+            else:
+                kwargs.update(x=float(x) * span, y=float(y) * span)
         net.add_node(gid, **kwargs)
     for row in edges.sort_values(["src", "dst"]).to_dict("records"):
         src, dst = int(row["src"]), int(row["dst"])
         if src in node_ids and dst in node_ids:
             label = human_kzt(row["sum_kzt"])
-            net.add_edge(src, dst, label=label, title=label, arrows="to")
-    return net.generate_html()
+            edge_kwargs = {"title": label, "arrows": "to"}
+            if show_labels:
+                edge_kwargs["label"] = label
+            net.add_edge(src, dst, **edge_kwargs)
+    html = net.generate_html()
+    # pyvis never calls fit() on its own, so a static (physics-off) graph with
+    # explicit x/y keeps the default viewport instead of framing the content.
+    return html.replace("return network;", "network.fit(); return network;")
 
 
 def render() -> None:
@@ -81,8 +122,10 @@ def render() -> None:
         near = ego_gids(edges, active_gid)
         ego_nodes = nodes[nodes["gid"].isin(near)]
 
+    st.caption("Полная сеть: подписи узлов и переводов скрыты из-за плотности графа — "
+              "наведите курсор на узел или ребро, чтобы увидеть gid, роль и сумму.")
     started = time.perf_counter()
-    full_html = render_graph(nodes, edges, color_by=mode, active_gid=active_gid)
+    full_html = render_graph(nodes, edges, color_by=mode, active_gid=active_gid, show_labels=False)
     elapsed = time.perf_counter() - started
     if elapsed > 3:
         if ego_nodes is None:
@@ -94,6 +137,12 @@ def render() -> None:
         st.components.v1.html(full_html, height=720, scrolling=True)
     if ego_nodes is not None:
         st.markdown("#### Окружение узла: до двух переходов в обе стороны")
-        st.components.v1.html(render_graph(ego_nodes, edges, color_by=mode,
-                                           active_gid=active_gid, height="420px"),
-                              height=440, scrolling=True)
+        ego_labels = len(ego_nodes) <= 30
+        if not ego_labels:
+            st.caption(f"В окружении {len(ego_nodes)} узлов — подписи скрыты для читаемости, "
+                      "наведите курсор, чтобы увидеть gid и роль.")
+        ego_local = _local_layout(ego_nodes, edges)
+        st.components.v1.html(render_graph(ego_local, edges, color_by=mode,
+                                           active_gid=active_gid, height="480px",
+                                           show_labels=ego_labels, rescale=True),
+                              height=500, scrolling=True)

@@ -16,3 +16,29 @@ test('real dataset, all routes, GID search, boundary, exports and desktop layout
   await page.setViewportSize({width:1920,height:1080});await page.goto('/graph');await expect(page.locator('.sigma-container canvas').first()).toBeVisible();await page.screenshot({path:'test-results/graph-1920.png'});
   await page.getByRole('button',{name:'Вся сеть',exact:true}).click();await expect(page.locator('.graph-caption')).toContainText('2 248'.replace(' ','\u00a0'));await expect(page.locator('.sigma-container canvas').first()).toBeVisible();expect(errors).toEqual([]);
 });
+
+test('MoneyGraph branding and filtered transaction totals match the downloaded CSV',async({page,request})=>{
+  const d=await (await request.get('/api/dataset')).json();
+  const gid=d.transactions[0].src;
+  const expected=d.transactions.filter((t:any)=>t.src===gid||t.dst===gid);
+  const total=expected.reduce((sum:number,t:any)=>sum+t.sum_kzt,0);
+  const formatted=new Intl.NumberFormat('ru-RU',{maximumFractionDigits:2}).format(total)+' KZT';
+  await page.goto('/transactions?gid='+gid);
+  await expect(page).toHaveTitle('MoneyGraph — транзакционная сеть');
+  await expect(page.locator('.brand strong')).toHaveText('MoneyGraph');
+  await expect(page.locator('.table-summary')).toContainText(formatted);
+  const downloadEvent=page.waitForEvent('download');
+  await page.getByRole('button',{name:'Экспорт выборки',exact:true}).click();
+  const download=await downloadEvent;
+  expect(download.suggestedFilename()).toBe('transactions_filtered.csv');
+  const stream=await download.createReadStream();
+  if(!stream)throw Error('Download stream is unavailable');
+  let content='';
+  for await(const chunk of stream)content+=chunk.toString();
+  const lines=content.replace(/^\ufeff/,'').trim().split(/\r?\n/);
+  expect(lines[0]).toBe('"date","src","dst","sum_kzt"');
+  expect(lines.length-1).toBe(expected.length);
+  expect(content).toContain(gid);
+  const downloadedTotal=lines.slice(1).reduce((sum,line)=>sum+Number(line.split(',').at(-1)!.replaceAll('"','')),0);
+  expect(downloadedTotal).toBeCloseTo(total,2);
+});

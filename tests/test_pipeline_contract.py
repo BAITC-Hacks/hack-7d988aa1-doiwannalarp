@@ -98,7 +98,8 @@ def test_determinism(synthetic_data, tmp_path):
     pipeline.run(data_dir=synthetic_data, out_dir=out_dir1, seed=42)
     pipeline.run(data_dir=synthetic_data, out_dir=out_dir2, seed=42)
 
-    for name in ["nodes_roles.csv", "clusters.csv", "top_nodes.csv", "sensitivity.csv"]:
+    for name in ["nodes_roles.csv", "clusters.csv", "top_nodes.csv", "sensitivity.csv",
+                 "completeness.csv", "routes.csv"]:
         h1 = hashlib.sha256((out_dir1 / name).read_bytes()).hexdigest()
         h2 = hashlib.sha256((out_dir2 / name).read_bytes()).hexdigest()
         assert h1 == h2, f"{name} not deterministic"

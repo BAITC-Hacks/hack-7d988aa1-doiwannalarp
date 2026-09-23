@@ -4,7 +4,7 @@ import math
 import pandas as pd
 
 from fixtures import make_fixture_graph
-from moneygraph.evidence import BANNED
+from moneygraph.evidence import BANNED, build_evidence
 from moneygraph.features import compute_features
 from moneygraph.graph import build_graph
 from moneygraph.roles import assign_roles
@@ -79,3 +79,15 @@ def test_depth_four_hub_can_consolidate():
     roles = assign_roles(hub, graph).set_index("gid")
     assert roles.loc[6, "role"] == "consolidator"
     assert roles.loc[6, "role"] != "terminal"
+
+
+def test_transit_evidence_describes_activity_not_matched_funds():
+    evidence = build_evidence({
+        "role": "transit", "in_sum": 500_000, "out_sum": 500_000,
+        "pass_ratio": 1.0, "fast_through_share": 1.0,
+    })
+    assert "100% исходящих" in evidence
+    assert "в дни поступлений или следующие 2 дня" in evidence
+    assert "суммы не сопоставлены" in evidence
+    assert "ушло в течение" not in evidence
+    assert len(evidence) <= 200

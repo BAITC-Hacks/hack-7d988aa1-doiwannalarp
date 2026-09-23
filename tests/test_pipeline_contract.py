@@ -55,9 +55,23 @@ def synthetic_data(tmp_path):
     return data_dir
 
 
-def test_pipeline_contract(synthetic_data, tmp_path):
+def test_pipeline_contract(synthetic_data, tmp_path, monkeypatch):
+    # A custom-output run must not overwrite the working checkout's notes.
+    working_dir = tmp_path / "checkout"
+    (working_dir / "docs").mkdir(parents=True)
+    notes = working_dir / "docs" / "DATA_NOTES.md"
+    notes.write_text("Existing real-data notes", encoding="utf-8")
+    monkeypatch.chdir(working_dir)
     out_dir = tmp_path / "out"
     meta = pipeline.run(data_dir=synthetic_data, out_dir=out_dir, seed=42)
+    assert notes.read_text(encoding="utf-8") == "Existing real-data notes"
+    assert "nodes: 10" in (out_dir / "docs" / "DATA_NOTES.md").read_text(encoding="utf-8")
+    assert not (working_dir / "outputs").exists()
+    sensitivity = pd.read_csv(out_dir / "sensitivity.csv")
+    assert list(sensitivity.columns) == ["param", "factor", "role_flips", "top20_jaccard"]
+    assert not sensitivity.empty
+    assert sensitivity.top20_jaccard.between(0, 1).all()
+    assert meta["extras_status"]["sensitivity"] == "ok"
 
     nodes_roles = pd.read_csv(out_dir / "nodes_roles.csv")
     assert len(nodes_roles) == 10
@@ -84,7 +98,21 @@ def test_determinism(synthetic_data, tmp_path):
     pipeline.run(data_dir=synthetic_data, out_dir=out_dir1, seed=42)
     pipeline.run(data_dir=synthetic_data, out_dir=out_dir2, seed=42)
 
-    for name in ["nodes_roles.csv", "clusters.csv", "top_nodes.csv"]:
+    for name in ["nodes_roles.csv", "clusters.csv", "top_nodes.csv", "sensitivity.csv"]:
         h1 = hashlib.sha256((out_dir1 / name).read_bytes()).hexdigest()
         h2 = hashlib.sha256((out_dir2 / name).read_bytes()).hexdigest()
         assert h1 == h2, f"{name} not deterministic"
+
+
+def test_sensitivity_failure_keeps_required_outputs(synthetic_data, tmp_path, monkeypatch):
+    from moneygraph.extras import sensitivity
+
+    def unavailable(*args, **kwargs):
+        raise RuntimeError("Sensitivity unavailable for this test")
+
+    monkeypatch.setattr(sensitivity, "run", unavailable)
+    out_dir = tmp_path / "out"
+    meta = pipeline.run(synthetic_data, out_dir)
+    assert meta["extras_status"]["sensitivity"].startswith("failed:")
+    for name in ("nodes_roles.csv", "clusters.csv", "top_nodes.csv", "run_meta.json"):
+        assert (out_dir / name).exists()

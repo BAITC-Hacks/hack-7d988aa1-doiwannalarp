@@ -38,6 +38,8 @@ with st.sidebar:
     st.text_input("gid", key="gid_search", on_change=_update_gid_from_search)
     if st.session_state.get("gid_search_invalid"):
         st.warning("Введите целочисленный gid.")
+    elif st.session_state.get("active_gid") is not None:
+        st.caption(f"Выбранный узел: {st.session_state['active_gid']}")
 
 tabs = st.tabs(["Обзор", "Приоритеты", "Сеть", "Карточка узла", "Кластеры", "Анализ"])
 views = [overview, top, network, node_card, clusters, analysis]

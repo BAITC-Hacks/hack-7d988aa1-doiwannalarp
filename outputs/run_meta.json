@@ -1,30 +1,36 @@
 {
   "timings_seconds": {
-    "load_raw": 0.0504,
-    "check_data": 0.0396,
-    "build_graph": 0.0165,
-    "compute_features": 14.9233,
-    "add_temporal": 2.4364,
-    "assign_roles": 0.0031,
-    "detect_clusters": 0.0049,
-    "score_priority": 0.0023,
-    "summarize_clusters": 0.0164,
-    "build_top_nodes": 0.0032,
-    "write_outputs": 0.028,
-    "write_graph_edges": 0.0121,
-    "extra_resilience": 0.085,
-    "extra_completeness": 0.0127,
-    "extra_routes": 0.0531
+    "load_raw": 0.0503,
+    "check_data": 0.0416,
+    "build_graph": 0.0163,
+    "compute_features": 32.8099,
+    "add_temporal": 5.533,
+    "assign_roles": 0.3962,
+    "detect_clusters": 0.2347,
+    "score_priority": 0.5326,
+    "summarize_clusters": 0.4982,
+    "build_top_nodes": 0.0107,
+    "write_outputs": 0.0825,
+    "write_graph_edges": 0.0219,
+    "extra_resilience": 0.1884,
+    "extra_completeness": 0.0493,
+    "extra_routes": 0.1406
   },
   "counts": {
     "nodes": 2248,
     "edges": 3119,
     "transactions": 4840,
     "seeds": 81,
-    "clusters": 35
+    "clusters": 68
   },
   "role_distribution": {
-    "peripheral": 2248
+    "peripheral": 982,
+    "terminal": 562,
+    "boundary": 444,
+    "transit": 92,
+    "consolidator": 81,
+    "distributor": 74,
+    "coordinator": 13
   },
   "quality": {
     "n_nodes": 2248,

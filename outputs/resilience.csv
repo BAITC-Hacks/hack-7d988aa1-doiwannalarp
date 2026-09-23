@@ -1,8 +1,8 @@
 strategy,n_removed,n_components,largest_wcc,role_nodes_in_largest_wcc
-top_priority_5,5,187,1620,{'peripheral': 1620}
-top_priority_10,10,265,1502,{'peripheral': 1502}
-top_priority_20,20,389,1286,{'peripheral': 1286}
-top_degree_5,5,394,1657,{'peripheral': 1657}
-top_degree_10,10,527,1428,{'peripheral': 1428}
-top_degree_20,20,724,1188,{'peripheral': 1188}
-all_seeds,81,315,1524,{'peripheral': 1524}
+top_priority_5,5,85,1789,"{'peripheral': 658, 'terminal': 484, 'boundary': 410, 'transit': 80, 'consolidator': 76, 'distributor': 69, 'coordinator': 12}"
+top_priority_10,10,126,1726,"{'peripheral': 632, 'terminal': 462, 'boundary': 404, 'transit': 76, 'consolidator': 74, 'distributor': 68, 'coordinator': 10}"
+top_priority_20,20,177,1692,"{'peripheral': 621, 'terminal': 456, 'boundary': 396, 'transit': 73, 'consolidator': 69, 'distributor': 68, 'coordinator': 9}"
+top_degree_5,5,394,1657,"{'peripheral': 620, 'terminal': 433, 'boundary': 378, 'consolidator': 77, 'transit': 71, 'distributor': 65, 'coordinator': 13}"
+top_degree_10,10,527,1428,"{'peripheral': 530, 'terminal': 361, 'boundary': 327, 'consolidator': 70, 'distributor': 64, 'transit': 63, 'coordinator': 13}"
+top_degree_20,20,724,1188,"{'peripheral': 457, 'terminal': 305, 'boundary': 238, 'distributor': 60, 'consolidator': 60, 'transit': 57, 'coordinator': 11}"
+all_seeds,81,315,1524,"{'peripheral': 494, 'boundary': 419, 'terminal': 395, 'consolidator': 73, 'transit': 69, 'distributor': 62, 'coordinator': 12}"

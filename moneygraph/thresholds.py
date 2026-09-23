@@ -1,53 +1,51 @@
-"""Role-rule thresholds. Owned by DEV2; DEV1 seeds initial placeholder values
-so the pipeline runs end to end. All values are domain-reasoned guesses to be
-recalibrated by DEV2 from the real feature distributions.
+"""Distribution-calibrated, reproducible MoneyGraph decision thresholds."""
 
-Each threshold has a *_STRONG pair used to grade role_score in [0.5, 1.0].
-"""
+# Three reached seeds separates convergence from ordinary one-source chains.
+COORD_SEED_REACH_MIN = 3
+# Ten reached seeds is a clear multi-source concentration.
+COORD_SEED_REACH_STRONG = 10
+# Three feeder branches narrow 31 initial candidates to 13 clear convergence points.
+COORD_FEEDER_MIN = 3
+# Five feeder branches denotes a pronounced convergence point.
+COORD_FEEDER_STRONG = 5
+# Any positive gain identifies convergence absent from a single predecessor.
+COORD_GAIN_MIN = 1
+# Two gained seed paths is the observed high-convergence level.
+COORD_GAIN_STRONG = 2
 
-# coordinator: funds from multiple seeds converge through multiple branches.
-# convergence_gain is the true rarity filter here — on this dataset it only
-# takes values {0, 1, 2} and is >0 for 47/2248 nodes, so MIN=1 already isolates
-# real convergence points; seed_reach/feeder_branches trim the rest.
-COORDINATOR_SEED_REACH_MIN = 3       # p50 of nonzero seed_reach is 7, so 3 is a low bar kept for the AND
-COORDINATOR_SEED_REACH_STRONG = 10   # ~p95 of nonzero seed_reach
-COORDINATOR_FEEDER_BRANCHES_MIN = 2  # p75 of nonzero feeder_branches
-COORDINATOR_FEEDER_BRANCHES_STRONG = 5  # ~p95 of nonzero feeder_branches
-COORDINATOR_CONVERGENCE_GAIN_MIN = 1    # any measured gain; observed max on this data is 2
-COORDINATOR_CONVERGENCE_GAIN_STRONG = 2  # observed max convergence_gain
+# Four payers exceeds the all-node in-degree p95 of three.
+CONS_PAYERS_MIN = 4
+# Ten payers is well beyond the all-node in-degree p99 of six.
+CONS_PAYERS_STRONG = 10
+# Three distinct payers in three days supports a concentrated collection burst.
+CONS_3D_STRONG = 3
 
-# consolidator: many distinct payers feed one node
-CONSOLIDATOR_IN_DEG_MIN = 4          # between p95 (3) and p99 (6) of nonzero in_deg
-CONSOLIDATOR_IN_DEG_STRONG = 10      # beyond p99 of nonzero in_deg
+# Six receivers exceeds the all-node out-degree p95 of five.
+DIST_RECEIVERS_MIN = 6
+# Twenty-four receivers approximates the all-node out-degree p99 of 23.53.
+DIST_RECEIVERS_STRONG = 24
 
-# distributor: fans out to many receivers while still observable (depth<=3)
-DISTRIBUTOR_OUT_DEG_MIN = 4          # ~p75 of nonzero out_deg
-DISTRIBUTOR_OUT_DEG_STRONG = 16      # ~p95 of nonzero out_deg
+# Passing at least 70% of observed inflow separates through-flow from p75=57%.
+TRANSIT_RATIO_LO = 0.7
+# A 130% ceiling allows modest missing inflow but excludes extreme ratios.
+TRANSIT_RATIO_HI = 1.3
+# At most three counterparties per side keeps transit distinct from hubs.
+TRANSIT_DEG_MAX = 3
 
-# transit: passes most of what it receives straight through, low fan-in/out
-TRANSIT_RATIO_LO = 0.7               # passes through most of inflow
-TRANSIT_RATIO_HI = 1.3               # allow small measurement slack above 1.0
-TRANSIT_DEG_MAX = 3                  # simple pass-through, not a hub
+# Fifty thousand KZT equals the all-node median observed inflow.
+TERMINAL_INSUM_MIN = 50_000.0
+# Six hundred twenty thousand KZT is slightly above inflow p95=613,779.
+TERMINAL_INSUM_STRONG = 620_000.0
+# Forwarding at most 30% indicates weak observed onward flow.
+TERMINAL_RATIO_MAX = 0.3
+# Less than half the inflow arriving late guards the July right edge.
+LATE_INFLOW_MAX = 0.5
 
-# terminal: receives observable inflow, does not forward it on (in this window)
-TERMINAL_IN_SUM_MIN = 50_000.0       # p50 of nonzero in_sum, a few real transfers not noise
-TERMINAL_IN_SUM_STRONG = 620_000.0   # ~p95 of nonzero in_sum
-TERMINAL_PASS_RATIO_MAX = 0.3        # keeps most of what it receives
-TERMINAL_LATE_INFLOW_GUARD = 0.5     # matches methodology spec: guard against right-edge censoring
-
-role_weights = {
-    "coordinator": 1.0,
-    "consolidator": 0.9,
-    "distributor": 0.75,
-    "transit": 0.6,
-    "terminal": 0.6,
-    "boundary": 0.4,
-    "peripheral": 0.1,
-}
-
-priority_weights = {
-    "role": 0.35,
-    "seed_flow_in": 0.30,
-    "turnover": 0.20,
-    "betweenness": 0.15,
-}
+# Role multipliers encode analytical relevance without declaring guilt.
+ROLE_WEIGHTS = dict(coordinator=1.0, consolidator=0.9, distributor=0.75,
+                    transit=0.6, terminal=0.6, boundary=0.4, peripheral=0.1)
+# The role and seed-linked flow lead; volume and unweighted centrality support.
+PRIORITY_WEIGHTS = dict(role=0.35, seed_flow=0.30, volume=0.20,
+                        betweenness=0.15)
+# Known seeds receive a novelty discount so discovery favors downstream nodes.
+NOVELTY_SEED = 0.7

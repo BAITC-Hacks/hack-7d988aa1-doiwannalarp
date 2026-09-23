@@ -44,10 +44,14 @@ def render() -> None:
 
     completeness = _section("Полнота", "completeness.csv")
     if completeness is not None:
-        st.markdown("#### Запросы для дополнения данных")
-        st.dataframe(completeness, use_container_width=True, hide_index=True)
-        st.download_button("Скачать запросы CSV", completeness.to_csv(index=False).encode("utf-8"),
-                           file_name="completeness.csv", mime="text/csv")
+        st.markdown("#### Узлы на границе выгрузки: запросы для дополнения данных")
+        boundary = completeness[completeness["reason"] == "boundary"]
+        st.dataframe(boundary, use_container_width=True, hide_index=True)
+        other_count = len(completeness) - len(boundary)
+        if other_count:
+            st.caption(f"Ещё {other_count} узлов имеют признаки неполного входящего потока.")
+        st.download_button("Скачать запросы CSV", boundary.to_csv(index=False).encode("utf-8"),
+                           file_name="boundary_requests.csv", mime="text/csv")
 
     routes = _section("Маршруты", "routes.csv")
     if routes is not None:

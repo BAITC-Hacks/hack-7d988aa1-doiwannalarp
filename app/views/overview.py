@@ -17,7 +17,7 @@ def render() -> None:
         from app.data import graph_edges
         total_kzt = graph_edges()["sum_kzt"].sum()
     runtime = sum(meta.get("timings_seconds", {}).values())
-    cols = st.columns(5)
+    cols = st.columns([1, 1, 1.6, 1.1, 1])
     for col, label, value in zip(cols,
         ["Узлы", "Рёбра", "Переводы, KZT", "Время расчёта", "Кластеры"],
         [counts.get("nodes", len(roles)), counts.get("edges", "н/д"), human_kzt(total_kzt),

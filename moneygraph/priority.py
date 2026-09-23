@@ -43,6 +43,9 @@ def score_priority(enriched_df, weights=None) -> pd.DataFrame:
         score = float(novelty * sum(components.values()))
         top2 = sorted(components, key=lambda key: (-components[key], list(components).index(key)))[:2]
         evidence = str(row.evidence).rstrip(". ")
+        prefix = ROLE_RU[role] + ": "
+        if evidence.startswith(prefix):
+            evidence = evidence[len(prefix):]
         why = f"{ROLE_RU[role]}: {evidence}. Драйверы: {', '.join(LABELS[key] for key in top2)}. Действие: {ACTIONS[role]}"
         if len(why) > WHY_MAX:
             why = why[:WHY_MAX - 1] + "…"

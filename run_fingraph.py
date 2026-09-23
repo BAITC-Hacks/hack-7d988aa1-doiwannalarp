@@ -1,4 +1,4 @@
-"""Local-only HTTP adapter for the existing MoneyGraph pipeline and FinGraph UI.
+"""Local-only HTTP adapter for the existing MoneyGraph pipeline and MoneyGraph UI.
 
 No role logic lives here. Identifiers are converted to strings before JSON encoding.
 """
@@ -169,7 +169,7 @@ class State:
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "FinGraphLocal/1.0"
+    server_version = "MoneyGraphLocal/1.0"
 
     def send(self, status, body, content_type="application/json; charset=utf-8", filename=None):
         encoded = json.dumps(body, ensure_ascii=False, allow_nan=False).encode() if not isinstance(body, bytes) else body
@@ -245,14 +245,14 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="FinGraph: локальный интерфейс транзакционной сети")
+    parser = argparse.ArgumentParser(description="MoneyGraph: локальный интерфейс транзакционной сети")
     parser.add_argument("--port", type=int, default=8080)
     parser.add_argument("--data", type=Path, default=ROOT / "data")
     parser.add_argument("--out", type=Path, default=ROOT / "outputs")
     args = parser.parse_args()
     server = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
     server.state = State(args.data.resolve(), args.out.resolve())
-    print(f"FinGraph: http://127.0.0.1:{args.port}", flush=True)
+    print(f"MoneyGraph: http://127.0.0.1:{args.port}", flush=True)
     server.serve_forever()
 
 

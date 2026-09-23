@@ -1,4 +1,4 @@
-# FinGraph
+# MoneyGraph
 
 Из корня репозитория:
 

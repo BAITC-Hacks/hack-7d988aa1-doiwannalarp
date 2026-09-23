@@ -11,7 +11,7 @@ export function Provider({children}:{children:ReactNode}){
   const reload=async()=>{setError('');try{setData(await api.getDataset())}catch(e){setError(String(e))}};
   useEffect(()=>{void reload()},[]);useEffect(()=>{localStorage.setItem('fingraph.settings',JSON.stringify(settings));document.documentElement.dataset.density=settings.compact?'compact':'normal'},[settings]);
   useEffect(()=>{if(!message)return;const t=setTimeout(()=>setMessage(''),5000);return()=>clearTimeout(t)},[message]);
-  if(error)return <main className="startup"><h1>FinGraph</h1><h2>Не удалось открыть набор</h2><p role="alert">{error}</p><button onClick={()=>void reload()}>Повторить</button><p>Локальный источник: <code>python run_fingraph.py</code>. Демо не подменяет ошибку.</p></main>;
-  if(!data)return <main className="startup" aria-busy="true"><h1>FinGraph</h1><p>Загрузка транзакционной сети…</p>{[1,2,3].map(i=><div className="skeleton" key={i}/>)}</main>;
+  if(error)return <main className="startup"><h1>MoneyGraph</h1><h2>Не удалось открыть набор</h2><p role="alert">{error}</p><button onClick={()=>void reload()}>Повторить</button><p>Локальный источник: <code>python run_fingraph.py</code>. Демо не подменяет ошибку.</p></main>;
+  if(!data)return <main className="startup" aria-busy="true"><h1>MoneyGraph</h1><p>Загрузка транзакционной сети…</p>{[1,2,3].map(i=><div className="skeleton" key={i}/>)}</main>;
   return <Ctx.Provider value={{data,settings,setSettings,reload,replace:setData,notice:setMessage}}>{children}{message&&<div className="toast" role="status">{message}</div>}</Ctx.Provider>;
 }

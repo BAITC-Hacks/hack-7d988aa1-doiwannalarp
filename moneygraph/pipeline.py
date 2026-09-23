@@ -68,6 +68,18 @@ def run(data_dir=None, out_dir=None, seed: int = config.SEED) -> dict:
             traceback.print_exc()
             extras_status[name] = f"failed: {exc}"
 
+    try:
+        t0 = time.perf_counter()
+        from moneygraph.extras import sensitivity
+        df = sensitivity.run(features_df, G)
+        df.to_csv(out_dir / "sensitivity.csv", index=False, encoding="utf-8")
+        timings["extra_sensitivity"] = round(time.perf_counter() - t0, 4)
+        extras_status["sensitivity"] = "ok"
+    except Exception as exc:  # noqa: BLE001 - extras must never break the pipeline
+        print(f"[pipeline] warning: extra 'sensitivity' failed: {exc}")
+        traceback.print_exc()
+        extras_status["sensitivity"] = f"failed: {exc}"
+
     role_distribution = enriched["role"].value_counts().to_dict()
 
     meta = {

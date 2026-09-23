@@ -4,6 +4,7 @@
 .cursor/
 .gemini/
 .mcp
+.mcp.json
 .env
 .env.*
 !.env.example

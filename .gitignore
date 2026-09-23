@@ -8,6 +8,8 @@
 .env.*
 !.env.example
 .claude/
+CLAUDE.md
+AGENTS.md
 .streamlit/secrets.toml
 data/
 .venv/

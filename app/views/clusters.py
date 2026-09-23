@@ -1,7 +1,7 @@
 import streamlit as st
 
 from app.data import features, graph_edges, required_csv
-from app.views.network import _local_layout, render_graph
+from app.views.network import render_graph
 
 
 def render() -> None:
@@ -23,7 +23,6 @@ def render() -> None:
     if not show_labels:
         st.caption(f"В кластере {len(selected)} узлов — подписи скрыты для читаемости, "
                   "наведите курсор, чтобы увидеть gid и роль.")
-    local = _local_layout(selected, graph_edges())
-    st.components.v1.html(render_graph(local, graph_edges(), height="520px",
-                                       show_labels=show_labels, rescale=True),
+    st.components.v1.html(render_graph(selected, graph_edges(), height="520px",
+                                       show_labels=show_labels, hierarchical=True),
                           height=540, scrolling=True)

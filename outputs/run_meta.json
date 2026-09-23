@@ -1,0 +1,65 @@
+{
+  "timings_seconds": {
+    "load_raw": 0.0501,
+    "check_data": 0.0385,
+    "build_graph": 0.0151,
+    "compute_features": 30.4962,
+    "add_temporal": 5.1836,
+    "assign_roles": 0.0046,
+    "detect_clusters": 0.008,
+    "score_priority": 0.004,
+    "summarize_clusters": 0.035,
+    "build_top_nodes": 0.0066,
+    "write_outputs": 0.0885,
+    "write_graph_edges": 0.0233,
+    "extra_resilience": 0.1944,
+    "extra_completeness": 0.039,
+    "extra_routes": 0.1354
+  },
+  "counts": {
+    "nodes": 2248,
+    "edges": 3119,
+    "transactions": 4840,
+    "seeds": 81,
+    "clusters": 35
+  },
+  "role_distribution": {
+    "peripheral": 2248
+  },
+  "quality": {
+    "n_nodes": 2248,
+    "n_edges": 3119,
+    "n_tx": 4840,
+    "n_seeds": 81,
+    "depth_distribution": {
+      "0": 81,
+      "1": 472,
+      "2": 462,
+      "3": 789,
+      "4": 444
+    },
+    "seeds_without_outflow": 31,
+    "censored_depth4_no_outflow": 444,
+    "nodes_out_gt_in": 377,
+    "date_has_time_component": false,
+    "self_loops_edges": 0,
+    "self_loops_tx": 0,
+    "reconciliation_n_tx_diff": 0,
+    "reconciliation_sum_kzt_diff": 0.0,
+    "wcc_full_node_graph": 35,
+    "wcc_edge_only_graph": 16
+  },
+  "extras_status": {
+    "resilience": "ok",
+    "completeness": "ok",
+    "routes": "ok"
+  },
+  "output_paths": {
+    "nodes_roles": "outputs\\nodes_roles.csv",
+    "clusters": "outputs\\clusters.csv",
+    "top_nodes": "outputs\\top_nodes.csv",
+    "node_features": "outputs\\node_features.parquet",
+    "graph_edges": "outputs\\graph_edges.parquet"
+  },
+  "seed": 42
+}

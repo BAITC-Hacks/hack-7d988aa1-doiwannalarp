@@ -1,0 +1,8 @@
+strategy,n_removed,n_components,largest_wcc,role_nodes_in_largest_wcc
+top_priority_5,5,187,1620,{'peripheral': 1620}
+top_priority_10,10,265,1502,{'peripheral': 1502}
+top_priority_20,20,389,1286,{'peripheral': 1286}
+top_degree_5,5,394,1657,{'peripheral': 1657}
+top_degree_10,10,527,1428,{'peripheral': 1428}
+top_degree_20,20,724,1188,{'peripheral': 1188}
+all_seeds,81,315,1524,{'peripheral': 1524}

@@ -1,0 +1,90 @@
+import hashlib
+from pathlib import Path
+
+import pandas as pd
+import pytest
+
+from moneygraph import pipeline
+from moneygraph.schemas import ENRICHED_COLUMNS
+
+
+@pytest.fixture()
+def synthetic_data(tmp_path):
+    """10-node synthetic graph: 2 seeds, a consolidator, a distributor,
+    a transit hop, terminal receivers, and one depth-4 censored (boundary) node."""
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+
+    # gid layout: 1,2 seeds (depth0) -> 3 consolidator (depth1) -> 4 distributor (depth2)
+    # -> 5,6,7 receivers (depth3) -> 8 transit (depth3) -> 9 terminal (depth4, out_deg=0, censored)
+    # 10 isolated seed
+    nodes = pd.DataFrame({
+        "gid": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        "depth": [0, 0, 1, 2, 3, 3, 3, 3, 4, 0],
+        "is_seed": [True, True, False, False, False, False, False, False, False, True],
+    })
+
+    edges = pd.DataFrame([
+        (1, 3, 100_000.0, 2, 1),
+        (2, 3, 80_000.0, 1, 1),
+        (3, 4, 150_000.0, 2, 2),
+        (4, 5, 40_000.0, 1, 3),
+        (4, 6, 40_000.0, 1, 3),
+        (4, 7, 40_000.0, 1, 3),
+        (4, 8, 30_000.0, 1, 3),
+        (8, 9, 25_000.0, 1, 4),
+    ], columns=["src", "dst", "sum_kzt", "n_tx", "depth"])
+
+    tx = pd.DataFrame([
+        (1, 3, "2026-07-01", 50_000.0),
+        (1, 3, "2026-07-01", 50_000.0),
+        (2, 3, "2026-07-02", 80_000.0),
+        (3, 4, "2026-07-03", 100_000.0),
+        (3, 4, "2026-07-03", 50_000.0),
+        (4, 5, "2026-07-04", 40_000.0),
+        (4, 6, "2026-07-04", 40_000.0),
+        (4, 7, "2026-07-05", 40_000.0),
+        (4, 8, "2026-07-05", 30_000.0),
+        (8, 9, "2026-07-06", 25_000.0),
+    ], columns=["src", "dst", "date", "sum_kzt"])
+    tx["date"] = pd.to_datetime(tx["date"])
+
+    nodes.to_parquet(data_dir / "nodes.parquet", index=False)
+    edges.to_parquet(data_dir / "edges.parquet", index=False)
+    tx.to_parquet(data_dir / "transactions.parquet", index=False)
+    return data_dir
+
+
+def test_pipeline_contract(synthetic_data, tmp_path):
+    out_dir = tmp_path / "out"
+    meta = pipeline.run(data_dir=synthetic_data, out_dir=out_dir, seed=42)
+
+    nodes_roles = pd.read_csv(out_dir / "nodes_roles.csv")
+    assert len(nodes_roles) == 10
+    assert set(nodes_roles["gid"]) == set(range(1, 11))
+
+    features = pd.read_parquet(out_dir / "node_features.parquet")
+    assert list(features.columns) == ENRICHED_COLUMNS
+    assert len(features) == 10
+
+    edges = pd.read_parquet(synthetic_data / "edges.parquet")
+    assert features["in_deg"].sum() == len(edges)
+    assert features["out_deg"].sum() == len(edges)
+
+    depth4 = features[features["depth"] == 4]
+    assert (depth4["out_deg"] == 0).all()
+
+    assert meta["counts"]["nodes"] == 10
+    assert meta["counts"]["edges"] == len(edges)
+
+
+def test_determinism(synthetic_data, tmp_path):
+    out_dir1 = tmp_path / "out1"
+    out_dir2 = tmp_path / "out2"
+    pipeline.run(data_dir=synthetic_data, out_dir=out_dir1, seed=42)
+    pipeline.run(data_dir=synthetic_data, out_dir=out_dir2, seed=42)
+
+    for name in ["nodes_roles.csv", "clusters.csv", "top_nodes.csv"]:
+        h1 = hashlib.sha256((out_dir1 / name).read_bytes()).hexdigest()
+        h2 = hashlib.sha256((out_dir2 / name).read_bytes()).hexdigest()
+        assert h1 == h2, f"{name} not deterministic"

@@ -123,3 +123,15 @@ def test_cluster_hypothesis_names_role_representative(role):
     if role == "distributor":
         # Count only the named distributor, including recipients outside its cluster.
         assert "на 2 получателей" in summary.hypothesis
+
+
+def test_transit_evidence_describes_activity_not_matched_funds():
+    evidence = build_evidence({
+        "role": "transit", "in_sum": 500_000, "out_sum": 500_000,
+        "pass_ratio": 1.0, "fast_through_share": 1.0,
+    })
+    assert "100% исходящих" in evidence
+    assert "в дни поступлений или следующие 2 дня" in evidence
+    assert "суммы не сопоставлены" in evidence
+    assert "ушло в течение" not in evidence
+    assert len(evidence) <= 200

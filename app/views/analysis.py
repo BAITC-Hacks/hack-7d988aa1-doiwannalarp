@@ -29,6 +29,9 @@ def render() -> None:
     sensitivity = _section("Чувствительность", "sensitivity.csv")
     if sensitivity is not None:
         st.markdown("#### Чувствительность к порогам")
+        st.caption("Проверяются градуируемые пороги (_MIN и _STRONG). Границы отношений, "
+                   "ограничения степени, поздние поступления и веса приоритета не варьируются; "
+                   "это проверка устойчивости, не точности ролей.")
         st.dataframe(sensitivity, use_container_width=True, hide_index=True)
         if "top20_jaccard" in sensitivity and sensitivity["top20_jaccard"].lt(0.7).any():
             st.warning("Часть изменений порогов заметно меняет топ-20; используйте ранги как ориентир проверки.")
@@ -44,19 +47,39 @@ def render() -> None:
 
     completeness = _section("Полнота", "completeness.csv")
     if completeness is not None:
-        st.markdown("#### Узлы на границе выгрузки: запросы для дополнения данных")
-        boundary = completeness[completeness["reason"] == "boundary"]
-        st.dataframe(boundary, use_container_width=True, hide_index=True)
-        other_count = len(completeness) - len(boundary)
-        if other_count:
-            st.caption(f"Ещё {other_count} узлов имеют признаки неполного входящего потока.")
-        st.download_button("Скачать запросы CSV", boundary.to_csv(index=False).encode("utf-8"),
-                           file_name="boundary_requests.csv", mime="text/csv")
+        st.markdown("#### Запросы для дополнения данных")
+        st.caption("Граница выгрузки требует исходящих переводов; неполный входящий поток — входящих. "
+                   "У одного узла могут быть оба ограничения независимо от его роли.")
+        shown = completeness.copy()
+        shown["reason"] = shown["reason"].replace({
+            "boundary": "Граница выгрузки",
+            "inflow_incomplete": "Неполный входящий поток",
+            "boundary+inflow_incomplete": "Граница выгрузки и неполный входящий поток",
+        })
+        st.dataframe(shown, use_container_width=True, hide_index=True)
+        st.download_button("Скачать запросы CSV", completeness.to_csv(index=False).encode("utf-8"),
+                           file_name="completeness.csv", mime="text/csv")
 
     routes = _section("Маршруты", "routes.csv")
     if routes is not None:
         st.markdown("#### Цепочки и циклы")
-        st.dataframe(routes, use_container_width=True, hide_index=True)
+        st.caption("Цепочки: поступление и отправка через 1–2 дня; совпадения в один день "
+                   "показаны отдельно, их порядок неизвестен. Число повторений — число совместимых "
+                   "пар дат, а не независимых перемещений одних и тех же средств. "
+                   "Структурный цикл не подтверждает возврат денег во времени.")
+        shown_routes = routes.copy()
+        shown_routes["kind"] = shown_routes["kind"].replace({
+            "transit_chain": "Цепочка с интервалом 1–2 дня",
+            "same_day_candidate": "Совпадение в один день: порядок неизвестен",
+            "structural_cycle": "Структурный цикл без проверки времени",
+            "cycle": "Структурный цикл без проверки времени",
+        })
+        st.dataframe(shown_routes, use_container_width=True, hide_index=True)
+        st.caption("min_leg_kzt: для цепочки — максимум меньшей из двух дневных сумм "
+                   "по совместимым парам дат; для цикла — минимальная месячная сумма ребра. "
+                   "Это наблюдаемые суммы, не объём прослеженных средств. "
+                   "days_span — минимальный интервал в днях; для структурного цикла интервал "
+                   "и число повторений не определены.")
 
     st.markdown("#### Общие достижимые получатели")
     query = st.text_input("gid источников через запятую", placeholder="101, 202")

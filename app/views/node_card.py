@@ -93,6 +93,7 @@ def render() -> None:
             "threshold": "Порог", "passed": "Результат",
         })
         trace_frame["Результат"] = trace_frame["Результат"].map(lambda value: "✓" if value else "✗")
+        trace_frame[["Значение", "Порог"]] = trace_frame[["Значение", "Порог"]].astype("string").fillna("н/д")
         st.markdown("#### Проверка всех правил")
         st.dataframe(trace_frame[["Правило", "Условие", "Значение", "Порог", "Результат"]],
                      hide_index=True, use_container_width=True)
@@ -120,6 +121,8 @@ def render() -> None:
                 st.plotly_chart(figure, use_container_width=True)
 
     st.markdown("#### Переводы по дням")
+    st.caption("Даты имеют точность до дня: порядок переводов внутри дня неизвестен. "
+               "Временная близость входящих и исходящих не означает сопоставление конкретных сумм.")
     tx = transactions()
     relevant = tx[(tx["src"] == gid) | (tx["dst"] == gid)].copy()
     if relevant.empty:

@@ -1,0 +1,11 @@
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import {BrowserRouter,Routes,Route,Navigate} from 'react-router-dom';
+import {Provider} from './app/context';
+import {Shell} from './components/layout/Shell';
+import {GraphPage} from './pages/GraphPage';
+import {ClientsPage,ClientPage} from './pages/ClientsPage';
+import {TransactionsPage} from './pages/TransactionsPage';
+import {OverviewPage,AnalyticsPage,ClustersPage,ClusterPage,DataPage,SettingsPage} from './pages/OtherPages';
+import './styles.css';
+ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><BrowserRouter><Provider><Routes><Route element={<Shell/>}><Route index element={<Navigate to="/graph" replace/>}/><Route path="graph" element={<GraphPage/>}/><Route path="overview" element={<OverviewPage/>}/><Route path="clients" element={<ClientsPage/>}/><Route path="clients/:gid" element={<ClientPage/>}/><Route path="transactions" element={<TransactionsPage/>}/><Route path="clusters" element={<ClustersPage/>}/><Route path="clusters/:clusterId" element={<ClusterPage/>}/><Route path="analytics" element={<AnalyticsPage/>}/><Route path="data" element={<DataPage/>}/><Route path="settings" element={<SettingsPage/>}/><Route path="*" element={<Navigate to="/graph" replace/>}/></Route></Routes></Provider></BrowserRouter></React.StrictMode>);
